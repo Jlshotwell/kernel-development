@@ -1,7 +1,17 @@
 ORG 0 ;this is where the bios loads the boot loader
 BITS 16
 
+_start:
+    jmp short start ;ensures our code does not get written over by the BIOS.
+    nop
+
+times 33 db 0 ;fills in the BIOS parameter block
+
 start:
+    jmp 0x7c0:step2
+
+
+step2:
     cli ;Clear interupts
     mov ax, 0x7c0
     mov ds, ax
