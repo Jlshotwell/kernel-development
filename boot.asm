@@ -1,17 +1,26 @@
-ORG 0X7c00
+ORG 0 ;this is where the bios loads the boot loader
 BITS 16
 
 start:
-    mov si, message
+    cli ;Clear interupts
+    mov ax, 0x7c0
+    mov ds, ax
+    mov es, ax
+    mov ax, 0x00
+    mov ss, ax
+    mov sp, 0x7c00
+
+    sti ;Enables interupts
+    mov si, message ;The SI register gets pointed to the memory address of the message label.
     call print
     jmp $
 
 print:
     mov bx, 0
 .loop:
-    lodsb
-    cmp al, 0
-    je .done
+    lodsb ;moves whatever the SI register is pointing to into the AL register.
+    cmp al, 0 ;Compares if the SI register loaded 0 into the AL register.
+    je .done ;If AL is 0 then it will finish the subroutine.
     call print_char
     jmp .loop
 .done:
@@ -25,4 +34,4 @@ print_char:
 message: db 'Hello World!', 0
 
 times 510-($ - $$) db 0
-dw 0xAA55
+dw 0xAA55 ;writes 0x5544 in the 511th and 512th bytes. The bios looks for this value at this position in RAM to indicate that it is a bootable device.
