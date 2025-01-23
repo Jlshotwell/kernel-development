@@ -10,6 +10,14 @@ times 33 db 0 ;fills in the BIOS parameter block
 start:
     jmp 0x7c0:step2
 
+handle_zero: ;changing the interupt vextor table
+    mov ah, 0eh
+    mov al, "A"
+    mov bx, 0x00
+    int 0x10
+    iret
+
+
 
 step2:
     cli ;Clear interupts
@@ -19,8 +27,11 @@ step2:
     mov ax, 0x00
     mov ss, ax
     mov sp, 0x7c00
-
     sti ;Enables interupts
+    
+    mov word[ss:0x00], handle_zero ;moves the address of handle_zero into the ss register?
+    mov word[ss:0x02], 0x7c0 ;important to remember that each entry takes up 4 bytes
+    int 0 ;this interupt points to 0x00
     mov si, message ;The SI register gets pointed to the memory address of the message label.
     call print
     jmp $
@@ -37,7 +48,7 @@ print:
     ret
 
 print_char:
-    mov ah, 0eh
+    mov ah, 0eh ;why do we move 0eh in the ah register again?
     int 0x10
     ret
 
