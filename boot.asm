@@ -10,13 +10,6 @@ times 33 db 0 ;fills in the BIOS parameter block
 start:
     jmp 0x7c0:step2
 
-handle_zero: ;changing the interupt vextor table
-    mov ah, 0eh
-    mov al, "A"
-    mov bx, 0x00
-    int 0x10
-    iret
-
 
 
 step2:
@@ -29,11 +22,6 @@ step2:
     mov sp, 0x7c00
     sti ;Enables interupts
     
-    mov word[ss:0x00], handle_zero ;moves the address of handle_zero into the ss register?
-    mov word[ss:0x02], 0x7c0 ;important to remember that each entry takes up 4 bytes
-    int 0 ;this interupt points to 0x00
-    mov si, message ;The SI register gets pointed to the memory address of the message label.
-    call print
     jmp $
 
 print:
@@ -52,7 +40,7 @@ print_char:
     int 0x10
     ret
 
-message: db 'Hello World!', 0
+
 
 times 510-($ - $$) db 0
 dw 0xAA55 ;writes 0x5544 in the 511th and 512th bytes. The bios looks for this value at this position in RAM to indicate that it is a bootable device.
