@@ -62,3 +62,5 @@ times 510-($ - $$) db 0
 dw 0xAA55 ;BOOT SIGNATURE: writes 0x5544 in the 511th and 512th bytes. The bios looks for this value at this position in RAM to indicate that it is a bootable device.
 
 buffer:
+    ;Although you cannot write to this space in the assm language because it moves into the next sector of the disk, this is where our message.txt is stored.
+    ;Therefore you can read the disk by calling the buffer label.
