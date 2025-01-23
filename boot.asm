@@ -45,7 +45,7 @@ gdt_code:     ;  CS should point to this
     dw 0xffff ;Segment limit first 0-15
     dw 0      ;base first 0-15 bits
     db 0      ;Base 16-23 bits  
-    db 0x94   ;Access byte  
+    db 0x9a   ;Access byte  
     db 11001111b ;High 4 bit flags and low 4 bit flags
     db 0        ;base 24-31 bits
 
@@ -71,6 +71,4 @@ load32:
 times 510-($ - $$) db 0
 dw 0xAA55 ;BOOT SIGNATURE: writes 0x5544 in the 511th and 512th bytes. The bios looks for this value at this position in RAM to indicate that it is a bootable device.
 
-buffer:
-    ;Although you cannot write to this space in the assm language because it moves into the next sector of the disk, this is where our message.txt is stored.
-    ;Therefore you can read the disk by calling the buffer label.
+
