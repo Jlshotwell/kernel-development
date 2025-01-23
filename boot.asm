@@ -1,5 +1,8 @@
-ORG 0 
+ORG 0x7c00 
 BITS 16
+
+CODE_SEG equ gdt_code - gdt_start
+DATA_SEG equ gdt_data - gdt_start
 
 _start:
     jmp short start ;ensures our code does not get written over by the BIOS.
@@ -8,55 +11,62 @@ _start:
 times 33 db 0 ;fills in the BIOS parameter block
 
 start:
-    jmp 0x7c0:step2;this is where the bios loads the boot loader
+    jmp 0:step2;this is where the bios loads the boot loader
 
 
 
 step2:
     cli ;Clear interupts
-    mov ax, 0x7c0
+    mov ax, 0x00
     mov ds, ax
     mov es, ax
-    mov ax, 0x00
     mov ss, ax
     mov sp, 0x7c00
     sti ;Enables interupts
 
-    ;READING FROM DISK: FOR MORE INFO LOOK AT MIKE BROWN'S INTERRUPT LIST 13
-    mov ah, 2 ;READ SECTOR COMMAND
-    mov al, 1 ;ONE SECTOR TO READ
-    mov ch, 0 ;CYLINDER LOW EIGHT BYTES
-    mov cl, 2 ;READ SECTOR 2
-    mov dh, 0 ;HEAD NUMBER TO READ FROM
-    mov bx, buffer ;Loads memory address for the buffer label
-    int 0x13
-    jc error
-    mov si, buffer
-    call print
-    jmp $
+.load_protected:
+    cli
+    lgdt[gdt_descriptor]
+    mov eax, cr0
+    or eax, 0x1
+    mov cr0, eax
+    jmp CODE_SEG:load32
 
-error:
-    mov si, error_message
-    call print
-    jmp $
 
-print:
-    mov bx, 0
-.loop:
-    lodsb ;moves whatever the SI register is pointing to into the AL register.
-    cmp al, 0 ;Compares if the SI register loaded 0 into the AL register.
-    je .done ;If AL is 0 then it will finish the subroutine.
-    call print_char
-    jmp .loop
-.done:
-    ret
 
-print_char:
-    mov ah, 0eh ;why do we move 0eh in the ah register again?
-    int 0x10
-    ret
+;Creating the global descriptor table GDT
+gdt_start:
+gdt_null:
+    dd 0x0
+    dd 0x0
 
-error_message: db 'Failed ot load sector', 0
+;offset 0x8
+gdt_code:     ;  CS should point to this
+    dw 0xffff ;Segment limit first 0-15
+    dw 0      ;base first 0-15 bits
+    db 0      ;Base 16-23 bits  
+    db 0x94   ;Access byte  
+    db 11001111b ;High 4 bit flags and low 4 bit flags
+    db 0        ;base 24-31 bits
+
+;offset 0x10
+gdt_data:  ;Linked to DS, SS, ES, FS, GS 
+    dw 0xffff ;Segment limit first 0-15
+    dw 0      ;base first 0-15 bits
+    db 0      ;Base 16-23 bits  
+    db 0x92   ;Access byte  
+    db 11001111b ;High 4 bit flags and low 4 bit flags
+    db 0        ;base 24-31 bits
+
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start-1
+    dd gdt_start
+
+[BITS 32]
+load32:
+    jmp $    
 
 times 510-($ - $$) db 0
 dw 0xAA55 ;BOOT SIGNATURE: writes 0x5544 in the 511th and 512th bytes. The bios looks for this value at this position in RAM to indicate that it is a bootable device.
